@@ -27,8 +27,3 @@ With cycle stealing: The DMA just sneaks in between cars for a quick turn, then 
 
 LSIO : low speed input output (I2C, SPI, UART ...)
 
-# Dependency 
-
-FuseSoc
-
-Verilator

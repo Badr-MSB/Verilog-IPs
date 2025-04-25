@@ -63,6 +63,6 @@ module fifo #(
     assign is_empty_o = (count == 0);
 
     assign rvalid_o = (count > 0);
-    assign wready_o = (count < Depth);
+    assign wready_o = (count < Depth) & (~reset_i);
 
 endmodule
