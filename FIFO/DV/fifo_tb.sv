@@ -1,8 +1,7 @@
 module fifo_tb;
 
-    localparam DataWidth = 8;
-    localparam Depth = 16;
-
+    localparam DataWidth = 4;
+    localparam Depth = 8;
 
     // input regs
     reg clk;
@@ -34,6 +33,9 @@ module fifo_tb;
     );
 
     initial begin
+        $dumpfile("fifo_dump.vcd");
+        $dumpvars();
+        
         clk = 0;
         reset = 1;
         wvalid_i = 0;
@@ -44,11 +46,16 @@ module fifo_tb;
         reset = 0;
         @(posedge clk);
 
-        repeat (5) begin
+        repeat (Depth) begin
             write($urandom_range(0, 255)[DataWidth-1:0]);
         end
+        
+        @(posedge clk); 
+        #1
+        assert (is_full_o == 1'b1) $display("Assert passed");
+        else $error("Unexpected behaviour");
 
-        repeat (5) begin
+        repeat (Depth) begin
             read();
         end
 
@@ -58,6 +65,17 @@ module fifo_tb;
 
     always  #10 clk = ~clk;
 
+    always @(is_full_o) begin
+        if(is_full_o) begin
+            $display("The fifo is full.");
+        end
+    end
+
+    always @(is_empty_o) begin
+        if(is_empty_o) begin
+            $display("The fifo is empty.");
+        end
+    end
     // task write
     task automatic write(logic [DataWidth-1 : 0] data);
         // Wait until ready
