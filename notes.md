@@ -2,7 +2,7 @@
 
 co-processors : is a specialized processing unit that works alongside a main CPU to handle specific types of computations more efficiently than the general-purpose CPU (FPU ...). RISC-V allows custom co-processors via its Custom Extension (Zc) feature.
 
-caching masters : masters that have caches.
+caching masters : masters that has caches.
 
 non-caching masters : masters without caches.
 
