@@ -1,4 +1,6 @@
-module fifo_tb;
+`define CLK_PERIOD 10
+
+module fifo_sync_tb;
 
     localparam DataWidth = 4;
     localparam Depth = 8;
@@ -16,10 +18,10 @@ module fifo_tb;
     wire is_full_o;
     wire is_empty_o;
     
-    fifo #(
+    fifo_sync #(
     .DataWidth(DataWidth),
     .Depth(Depth)
-    ) fifo_UT (
+    ) fifo_sync_UT (
     .clk_i(clk),
     .reset_i(reset),
     .wvalid_i(wvalid_i),
@@ -63,7 +65,7 @@ module fifo_tb;
         $finish;
     end
 
-    always  #10 clk = ~clk;
+    always  #`CLK_PERIOD clk = ~clk;
 
     always @(is_full_o) begin
         if(is_full_o) begin

@@ -1,4 +1,4 @@
-module fifo #(
+module fifo_sync #(
     parameter int unsigned DataWidth = 8,
     parameter int unsigned Depth = 16
 ) (
