@@ -1,7 +1,9 @@
 // Copyright lowRISC contributors (OpenTitan project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
-//
+// Modifications by [Badr Mesbahi], [2025]
+
+`include "../top_pkg.sv"
 
 package tlul_pkg;
 
@@ -33,8 +35,7 @@ package tlul_pkg;
   parameter int DataMaxWidth    = 32;
   parameter int DataIntgWidth   = 7;
   parameter int DataFullWidth   = DataMaxWidth + DataIntgWidth;
-  parameter int RsvdWidth       = top_pkg::TL_AUW - prim_mubi_pkg::MuBi4Width -
-                                  H2DCmdIntgWidth - DataIntgWidth;
+  parameter int RsvdWidth       = top_pkg::TL_AUW - H2DCmdIntgWidth - DataIntgWidth;
 
   // Data that is returned upon an a TL-UL error belonging to an instruction fetch.
   // Note that this data will be returned with the correct bus integrity value.
@@ -45,24 +46,13 @@ package tlul_pkg;
 
   typedef struct packed {
     logic [RsvdWidth-1:0]       rsvd;
-    prim_mubi_pkg::mubi4_t      instr_type;
-    logic [H2DCmdIntgWidth-1:0] cmd_intg;
-    logic [DataIntgWidth-1:0]   data_intg;
+    logic [3:0]                 instr_type;
   } tl_a_user_t;
 
   parameter tl_a_user_t TL_A_USER_DEFAULT = '{
     rsvd: '0,
-    instr_type: prim_mubi_pkg::MuBi4False,
-    cmd_intg:  {H2DCmdIntgWidth{1'b1}},
-    data_intg: {DataIntgWidth{1'b1}}
+    instr_type: '0
   };
-
-  typedef struct packed {
-    prim_mubi_pkg::mubi4_t        instr_type;
-    logic   [top_pkg::TL_AW-1:0]  addr;
-    tl_a_op_e                     opcode;
-    logic  [top_pkg::TL_DBW-1:0]  mask;
-  } tl_h2d_cmd_intg_t;
 
   typedef struct packed {
     logic                         a_valid;
@@ -136,74 +126,5 @@ package tlul_pkg;
     d_user:   TL_D_USER_DEFAULT,
     default:  '0
   };
-
-  // Check user for unsupported values
-  function automatic logic tl_a_user_chk(tl_a_user_t user);
-    logic malformed_err;
-    logic unused_user;
-    unused_user = |user;
-    malformed_err = prim_mubi_pkg::mubi4_test_invalid(user.instr_type);
-    return malformed_err;
-  endfunction // tl_a_user_chk
-
-  // extract variables used for command checking
-  function automatic tl_h2d_cmd_intg_t extract_h2d_cmd_intg(tl_h2d_t tl);
-    tl_h2d_cmd_intg_t payload;
-    logic unused_tlul;
-    unused_tlul = ^tl;
-    payload.addr = tl.a_address;
-    payload.opcode = tl.a_opcode;
-    payload.mask = tl.a_mask;
-    payload.instr_type = tl.a_user.instr_type;
-    return payload;
-  endfunction // extract_h2d_payload
-
-  // extract variables used for response checking
-  function automatic tl_d2h_rsp_intg_t extract_d2h_rsp_intg(tl_d2h_t tl);
-    tl_d2h_rsp_intg_t payload;
-    logic unused_tlul;
-    unused_tlul = ^tl;
-    payload.opcode = tl.d_opcode;
-    payload.size   = tl.d_size;
-    //payload.source = tl.d_source;
-    payload.error  = tl.d_error;
-    return payload;
-  endfunction // extract_d2h_rsp_intg
-
-  // calculate ecc for command checking
-  function automatic logic [H2DCmdIntgWidth-1:0] get_cmd_intg(tl_h2d_t tl);
-    logic [H2DCmdIntgWidth-1:0] cmd_intg;
-    logic [H2DCmdMaxWidth-1:0] unused_cmd_payload;
-    tl_h2d_cmd_intg_t cmd;
-    cmd = extract_h2d_cmd_intg(tl);
-    {cmd_intg, unused_cmd_payload} =
-        prim_secded_pkg::prim_secded_inv_64_57_enc(H2DCmdMaxWidth'(cmd));
-   return cmd_intg;
-  endfunction  // get_cmd_intg
-
-  // calculate ecc for data checking
-  function automatic logic [DataIntgWidth-1:0] get_data_intg(logic [top_pkg::TL_DW-1:0] data);
-    logic [DataIntgWidth-1:0] data_intg;
-    logic [top_pkg::TL_DW-1:0] unused_data;
-    logic [DataIntgWidth + top_pkg::TL_DW - 1 : 0] enc_data;
-    enc_data = prim_secded_pkg::prim_secded_inv_39_32_enc(data);
-    data_intg = enc_data[DataIntgWidth + top_pkg::TL_DW - 1 : top_pkg::TL_DW];
-    unused_data = enc_data[top_pkg::TL_DW - 1 : 0];
-    return data_intg;
-  endfunction  // get_data_intg
-
-  // return inverted integrity for command payload
-  function automatic logic [H2DCmdIntgWidth-1:0] get_bad_cmd_intg(tl_h2d_t tl);
-    logic [H2DCmdIntgWidth-1:0] cmd_intg;
-    cmd_intg = get_cmd_intg(tl);
-    return ~cmd_intg;
-  endfunction // get_bad_cmd_intg
-
-  // return inverted integrity for data payload
-  function automatic logic [H2DCmdIntgWidth-1:0] get_bad_data_intg(logic [top_pkg::TL_DW-1:0] data);
-    logic [H2DCmdIntgWidth-1:0] data_intg;
-    data_intg = get_data_intg(data);
-    return ~data_intg;
-  endfunction // get_bad_data_intg
 
 endpackage
