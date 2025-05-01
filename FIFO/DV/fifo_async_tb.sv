@@ -1,6 +1,6 @@
 `define CLK_PERIOD 10
 
-module fifo_sync_tb;
+module fifo_async_tb;
 
     localparam DataWidth = 4;
     localparam Depth = 8;
@@ -18,7 +18,7 @@ module fifo_sync_tb;
     wire is_full_o;
     wire is_empty_o;
     
-    fifo_sync #(
+    fifo_async #(
     .DataWidth(DataWidth),
     .Depth(Depth)
     ) fifo_sync_UT (
